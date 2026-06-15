@@ -55,6 +55,7 @@
   .event-pill.macro { background: var(--accent-light); color: var(--accent); }
   .event-pill.endmarket { background: var(--teal-bg); color: var(--teal); }
   .event-pill.manual { background: var(--amber-bg); color: var(--amber); }
+  .event-pill.tentative { background: transparent; color: var(--amber); border: 1.5px dashed #f0c060; }
   .more-events { font-size: 10px; color: var(--text-muted); font-family: system-ui, sans-serif; padding: 1px 4px; cursor: pointer; }
   .list-view { display: flex; flex-direction: column; border: 1px solid var(--gray-border); border-radius: 8px; overflow: hidden; background: white; }
   .list-week-header { background: var(--gray-light); padding: 8px 16px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); font-family: system-ui, sans-serif; border-bottom: 1px solid var(--gray-border); }
@@ -66,6 +67,7 @@
   .list-name { font-size: 13px; font-weight: 600; color: var(--text); font-family: system-ui, sans-serif; }
   .list-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-family: system-ui, sans-serif; font-style: italic; }
   .manual-flag { font-size: 10px; color: var(--amber); font-family: system-ui, sans-serif; font-weight: 600; margin-top: 2px; }
+  .tentative-flag { font-size: 10px; color: var(--amber); font-family: system-ui, sans-serif; font-weight: 600; margin-top: 2px; font-style: italic; }
   .list-cat { font-size: 10px; font-family: system-ui, sans-serif; padding: 2px 8px; border-radius: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; align-self: start; margin-top: 2px; }
   .list-cat.macro { background: var(--accent-light); color: var(--accent); }
   .list-cat.endmarket { background: var(--teal-bg); color: var(--teal); }
@@ -135,7 +137,7 @@
     <h3>Manual release date overrides</h3>
     <p>Update these each quarter. Dates are saved in your browser.</p>
     <table class="override-table">
-      <thead><tr><th>Indicator</th><th>Next release date</th><th>Where to check</th></tr></thead>
+      <thead><tr><th>Indicator</th><th>Next release date</th><th>Tentative?</th><th>Where to check</th></tr></thead>
       <tbody id="overrideTableBody"></tbody>
     </table>
     <button class="save-btn" onclick="saveOverrides()">Save dates</button>
@@ -253,11 +255,26 @@ function loadOverrides() {
   try { const s = localStorage.getItem('macroCalOverrides'); if(s) manualOverrides=JSON.parse(s); } catch(e){}
 }
 function saveOverrides() {
-  document.querySelectorAll('#overrideTableBody input[type="date"]').forEach(i => { manualOverrides[i.dataset.id]=i.value; });
+  document.querySelectorAll('#overrideTableBody input[type="date"]').forEach(i => {
+    const id = i.dataset.id;
+    const tentativeBox = document.querySelector(`#overrideTableBody input[type="checkbox"][data-id="${id}"]`);
+    manualOverrides[id] = { date: i.value, tentative: tentativeBox ? tentativeBox.checked : false };
+  });
   try { localStorage.setItem('macroCalOverrides', JSON.stringify(manualOverrides)); } catch(e){}
   document.getElementById('overrideEditor').style.display='none';
   overrideEditorOpen=false;
   render();
+}
+function getOverrideDate(id) {
+  const v = manualOverrides[id];
+  if (!v) return null;
+  if (typeof v === 'string') return v; // legacy format
+  return v.date || null;
+}
+function isOverrideTentative(id) {
+  const v = manualOverrides[id];
+  if (!v || typeof v === 'string') return false;
+  return !!v.tentative;
 }
 function toggleOverrideEditor() {
   overrideEditorOpen=!overrideEditorOpen;
@@ -267,9 +284,12 @@ function toggleOverrideEditor() {
     const manuals = INDICATORS.filter(i=>i.manual);
     const sources = {dodge:'construction.com/dodge-momentum-index', abi:'aia.org/resources/research', aia_fcst:'aia.org/resources/research', nahb:'nahb.org/news-and-economics', johnburns:'jbrec.com'};
     document.getElementById('overrideTableBody').innerHTML = manuals.map(item=>`
-      <tr><td style="font-weight:600">${item.name}</td>
-      <td><input type="date" data-id="${item.id}" value="${manualOverrides[item.id]||''}"></td>
-      <td style="color:var(--text-muted)">${sources[item.id]||'—'}</td></tr>`).join('');
+      <tr>
+        <td style="font-weight:600">${item.name}</td>
+        <td><input type="date" data-id="${item.id}" value="${getOverrideDate(item.id)||''}"></td>
+        <td style="text-align:center"><input type="checkbox" data-id="${item.id}" ${isOverrideTentative(item.id)?'checked':''} title="Mark as tentative"></td>
+        <td style="color:var(--text-muted)">${sources[item.id]||'—'}</td>
+      </tr>`).join('');
   }
 }
 
@@ -286,8 +306,9 @@ function buildEventMap(startDate, endDate) {
 
   INDICATORS.forEach(item => {
     if (item.manual) {
-      const dt = manualOverrides[item.id];
-      if (dt) add(dt, item);
+      const dt = getOverrideDate(item.id);
+      const tentative = isOverrideTentative(item.id);
+      if (dt) add(dt, {...item, tentative});
       return;
     }
     const fixed = RELEASE_DATES[item.id];
@@ -318,6 +339,7 @@ function setFilter(f) { currentFilter=f; document.querySelectorAll('.filter-btn[
 function closeDetail() { document.getElementById('detailPanel').classList.remove('open'); }
 function showDetail(id, dt) {
   const item = INDICATORS.find(i=>i.id===id); if(!item) return;
+  const tentative = item.manual ? isOverrideTentative(id) : false;
   const d = new Date(dt+'T12:00:00');
   const dateStr = d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
   document.getElementById('detailContent').innerHTML = `
@@ -328,8 +350,9 @@ function showDetail(id, dt) {
     <div class="detail-row"><span class="detail-label">Release date</span><span class="detail-value">${dateStr}</span></div>
     <div class="detail-row"><span class="detail-label">Frequency</span><span class="detail-value">${item.freq}</span></div>
     <div class="detail-row"><span class="detail-label">Source</span><span class="detail-value">${item.manual?'Manual override':'Official schedule'}</span></div>
+    ${tentative?`<div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" style="color:var(--amber)">~ Tentative</span></div>`:''}
     <div class="detail-blurb">${item.blurb}</div>
-    ${item.manual?`<div class="detail-manual-warn">⚠ This date is manually maintained. Verify against the source and update via "Edit manual dates" if needed.</div>`:''}`;
+    ${tentative?`<div class="detail-manual-warn">~ This date is tentative. Confirm against the source before relying on it.</div>`:item.manual?`<div class="detail-manual-warn">⚠ This date is manually maintained. Verify against the source and update via "Edit manual dates" if needed.</div>`:''}`;
   document.getElementById('detailPanel').classList.add('open');
 }
 
@@ -372,7 +395,7 @@ function render() {
         </div>
         <div class="day-events">
           ${events.length===0?'<div class="no-releases">No releases</div>':''}
-          ${events.map(ev=>`<div class="event-pill ${ev.manual?'manual':ev.cat}" onclick="showDetail('${ev.id}','${dt}')">${ev.name}</div>`).join('')}
+          ${events.map(ev=>`<div class="event-pill ${ev.tentative?'tentative':ev.manual?'manual':ev.cat}" onclick="showDetail('${ev.id}','${dt}')">${ev.tentative?'~ ':''}${ev.name}</div>`).join('')}
         </div>
       </div>`;
     });
@@ -393,7 +416,7 @@ function render() {
       const shown=events.slice(0,3); const extra=events.length-3;
       cells+=`<div class="month-day ${isToday?'today':''}">
         <div class="month-day-num">${day}</div>
-        ${shown.map(ev=>`<div class="event-pill ${ev.manual?'manual':ev.cat}" onclick="showDetail('${ev.id}','${dt}')">${ev.name}</div>`).join('')}
+        ${shown.map(ev=>`<div class="event-pill ${ev.tentative?'tentative':ev.manual?'manual':ev.cat}" onclick="showDetail('${ev.id}','${dt}')">${ev.tentative?'~ ':''}${ev.name}</div>`).join('')}
         ${extra>0?`<div class="more-events">+${extra} more</div>`:''}
       </div>`;
     }
@@ -423,7 +446,7 @@ function render() {
       events.forEach(ev=>{
         rows+=`<div class="list-row" onclick="showDetail('${ev.id}','${dt}')">
           <div class="list-date ${isUpcoming?'upcoming':''}">${d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
-          <div><div class="list-name">${ev.name}</div>${ev.sub?`<div class="list-sub">${ev.sub}</div>`:''} ${ev.manual?'<div class="manual-flag">⚠ Manual date — verify and update</div>':''}</div>
+          <div><div class="list-name">${ev.tentative?'~ ':''} ${ev.name}</div>${ev.sub?`<div class="list-sub">${ev.sub}</div>`:''} ${ev.tentative?'<div class="tentative-flag">~ Tentative — confirm before relying on this date</div>':ev.manual?'<div class="manual-flag">⚠ Manual date — verify and update</div>':''}</div>
           <div class="list-cat ${ev.cat}">${ev.cat==='macro'?'Macro':'End market'}</div>
           <div class="list-freq">${ev.freq}</div>
         </div>`;
