@@ -131,7 +131,7 @@
 <div class="main">
   <div class="override-banner">
     <span>⚠</span>
-    <p><strong>4 indicators need manual date updates each quarter:</strong> AIA Architecture Billings Index, AIA Consensus Construction Forecast, Dodge Momentum Index, and John Burns RE Consulting. These are flagged with ⚠ in the calendar. <a onclick="toggleOverrideEditor()">Edit dates →</a></p>
+    <p><strong>3 indicators need manual date updates each quarter:</strong> AIA Consensus Construction Forecast, Dodge Momentum Index, and John Burns RE Consulting. These are flagged with ⚠ in the calendar. <a onclick="toggleOverrideEditor()">Edit dates →</a></p>
   </div>
   <div class="override-editor" id="overrideEditor">
     <h3>Manual release date overrides</h3>
@@ -174,7 +174,7 @@ const INDICATORS = [
   { id:'trade',    name:'US Trade Balance', sub:null, cat:'macro', subcategory:'Trade', freq:'Monthly', blurb:'Monthly goods and services imports vs. exports. Widening deficit can signal strong domestic demand; key input into GDP calculations.' },
   { id:'dodge',    name:'Dodge Momentum Index', sub:null, cat:'endmarket', subcategory:'Cross-Market', freq:'Monthly', blurb:'Leading indicator of non-residential construction based on planning-stage project activity. ~9-month lead on construction starts. Data center concentration can skew the headline.', manual:true },
   { id:'constr',   name:'Construction Spending', sub:'Census Bureau', cat:'endmarket', subcategory:'Non-Res / Commercial', freq:'Monthly', blurb:'Monthly dollar-value of construction put in place across residential, non-residential, and public segments.' },
-  { id:'abi',      name:'AIA Architecture Billings Index', sub:null, cat:'endmarket', subcategory:'Non-Res / Commercial', freq:'Monthly', blurb:'Monthly survey of architecture firms on billings and inquiries. Leading indicator (~9–12 months) for non-residential construction spending.', manual:true },
+  { id:'abi',      name:'AIA Architecture Billings Index', sub:null, cat:'endmarket', subcategory:'Non-Res / Commercial', freq:'Monthly', blurb:'Monthly survey of architecture firms on billings and inquiries. Leading indicator (~9–12 months) for non-residential construction spending.' },
   { id:'aia_fcst', name:'AIA Consensus Construction Forecast', sub:'Quarterly', cat:'endmarket', subcategory:'Non-Res / Commercial', freq:'Quarterly', blurb:'Quarterly consensus forecast for non-residential construction spending by segment. Useful for setting the medium-term baseline.', manual:true },
   { id:'starts',   name:'Housing Starts & Permits', sub:'Single-family & multifamily', cat:'endmarket', subcategory:'Residential', freq:'Monthly', blurb:'Census Bureau monthly report on new residential construction. Permits lead starts. Track single-family and multifamily separately.' },
   { id:'existing', name:'Existing Home Sales', sub:null, cat:'endmarket', subcategory:'Residential', freq:'Monthly', blurb:'NAR monthly report on closed sales of previously owned homes. Reflects current affordability and rate sensitivity.' },
@@ -184,9 +184,7 @@ const INDICATORS = [
   { id:'johnburns',name:'John Burns RE Consulting', sub:null, cat:'endmarket', subcategory:'Residential', freq:'Periodic', blurb:'Proprietary research on housing market conditions, builder activity, and demand trends.', manual:true },
 ];
 
-// ─── 2026 HARDCODED RELEASE DATES (from official OMB/BLS/BEA/Fed schedules) ──
-// Source: whitehouse.gov/wp-content/uploads/2025/09/pfei_schedule_release_dates_cy2026.pdf
-// and Federal Reserve official calendar
+// ─── 2026 HARDCODED RELEASE DATES ────────────────────────────────────────────
 const RELEASE_DATES = {
   // Employment Situation (payrolls + unemployment) — BLS, 8:30am
   payrolls: ['2026-01-09','2026-02-06','2026-03-06','2026-04-03','2026-05-08','2026-06-05','2026-07-02','2026-08-07','2026-09-04','2026-10-02','2026-11-06','2026-12-04'],
@@ -199,20 +197,23 @@ const RELEASE_DATES = {
   pce:      ['2026-01-29','2026-02-26','2026-03-27','2026-04-30','2026-05-28','2026-06-25','2026-07-30','2026-08-26','2026-09-30','2026-10-29','2026-11-25','2026-12-23'],
   // Advance Retail Sales — Census
   retail:   ['2026-01-15','2026-02-17','2026-03-16','2026-04-16','2026-05-14','2026-06-17','2026-07-16','2026-08-14','2026-09-16','2026-10-15','2026-11-17','2026-12-16'],
-  // GDP — BEA (advance, second, third for each quarter)
+  // GDP — BEA
   gdp:      ['2026-01-29','2026-02-26','2026-03-27','2026-04-30','2026-05-28','2026-06-25','2026-07-30','2026-08-26','2026-09-30','2026-10-29','2026-11-25','2026-12-23'],
   // Advance Durable Goods — Census
   durgood:  ['2026-01-28','2026-02-26','2026-03-25','2026-04-24','2026-05-28','2026-06-25','2026-07-27','2026-08-26','2026-09-25','2026-10-27','2026-11-25','2026-12-23'],
-  // Factory Orders (Manufacturers' Shipments, Inventories & Orders) — Census
+  // Factory Orders — Census
   factory:  ['2026-01-07','2026-02-04','2026-03-05','2026-04-02','2026-05-04','2026-06-03','2026-07-02','2026-08-04','2026-09-02','2026-10-02','2026-11-03','2026-12-03'],
   // Industrial Production & Capacity Utilization — Fed
   indpro:   ['2026-01-16','2026-02-18','2026-03-16','2026-04-16','2026-05-15','2026-06-15','2026-07-17','2026-08-18','2026-09-18','2026-10-16','2026-11-17','2026-12-16'],
   // NAHB Housing Market Index — official 2026 schedule (nahb.org)
   nahb:     ['2026-01-16','2026-02-17','2026-03-16','2026-04-15','2026-05-18','2026-06-15','2026-07-16','2026-08-17','2026-09-16','2026-10-19','2026-11-17','2026-12-16'],
+  // AIA Architecture Billings Index — official 2026 schedule (aia.org)
+  abi:      ['2026-01-21','2026-02-18','2026-03-18','2026-04-22','2026-05-20','2026-06-24','2026-07-22','2026-08-19','2026-09-23','2026-10-21','2026-11-18','2026-12-16'],
+  // Housing Starts & Permits — Census
   starts:   ['2026-01-21','2026-02-18','2026-03-17','2026-04-17','2026-05-19','2026-06-16','2026-07-17','2026-08-18','2026-09-17','2026-10-20','2026-11-18','2026-12-17'],
   // Construction Spending — Census (first business day of month)
   constr:   ['2026-01-02','2026-02-02','2026-03-02','2026-04-01','2026-05-01','2026-06-01','2026-07-01','2026-08-03','2026-09-01','2026-10-01','2026-11-02','2026-12-01'],
-  // US International Trade (Trade Balance) — Census/BEA joint
+  // US International Trade — Census/BEA joint
   trade:    ['2026-01-08','2026-02-05','2026-03-05','2026-04-02','2026-05-05','2026-06-09','2026-07-07','2026-08-04','2026-09-03','2026-10-06','2026-11-04','2026-12-08'],
   // FOMC Rate Decisions — Fed
   fomc:     ['2026-01-28','2026-03-18','2026-05-06','2026-06-17','2026-07-29','2026-09-16','2026-10-28','2026-12-09'],
@@ -220,9 +221,9 @@ const RELEASE_DATES = {
   minutes:  ['2026-02-18','2026-04-08','2026-05-27','2026-07-08','2026-08-19','2026-10-07','2026-11-18','2026-12-30'],
   // Fed Dot Plot / SEP — quarterly FOMC meetings
   dotplot:  ['2026-03-18','2026-06-17','2026-09-16','2026-12-09'],
-  // Fed Beige Book — 8x/year, ~2 weeks before FOMC
+  // Fed Beige Book — 8x/year
   beige:    ['2026-01-14','2026-03-04','2026-04-15','2026-06-03','2026-07-15','2026-09-02','2026-10-21','2026-11-25'],
-  // Existing Home Sales — NAR, typically 3rd week of month
+  // Existing Home Sales — NAR
   existing: ['2026-01-23','2026-02-19','2026-03-20','2026-04-22','2026-05-21','2026-06-19','2026-07-23','2026-08-20','2026-09-22','2026-10-22','2026-11-19','2026-12-22'],
 };
 
@@ -236,12 +237,12 @@ function getRulesDates(id, year, month) {
 
   if (id==='ism_mfg')  return [d(firstBusinessDay())];
   if (id==='ism_svc')  return [d(nthBizDay(3))];
-  if (id==='jolts')    return [d(nthBizDay(9))]; // ~9th business day
-  if (id==='umich')    return [d(nthWeekday(2, 5))]; // 2nd Friday
-  if (id==='nfib')     return [d(nthWeekday(2, 2))]; // 2nd Tuesday
-  if (id==='claims')   return allWeekdays(4); // every Thursday
-  if (id==='mortgage') return allWeekdays(4); // every Thursday (Freddie Mac)
-  if (id==='pending')  return [d(nthBizDay(17))]; // ~17th business day
+  if (id==='jolts')    return [d(nthBizDay(9))];
+  if (id==='umich')    return [d(nthWeekday(2, 5))];
+  if (id==='nfib')     return [d(nthWeekday(2, 2))];
+  if (id==='claims')   return allWeekdays(4);
+  if (id==='mortgage') return allWeekdays(4);
+  if (id==='pending')  return [d(nthBizDay(17))];
   return [];
 }
 
@@ -269,7 +270,7 @@ function saveOverrides() {
 function getOverrideDate(id) {
   const v = manualOverrides[id];
   if (!v) return null;
-  if (typeof v === 'string') return v; // legacy format
+  if (typeof v === 'string') return v;
   return v.date || null;
 }
 function isOverrideTentative(id) {
@@ -283,7 +284,7 @@ function toggleOverrideEditor() {
   ed.style.display=overrideEditorOpen?'block':'none';
   if(overrideEditorOpen) {
     const manuals = INDICATORS.filter(i=>i.manual);
-    const sources = {dodge:'construction.com/dodge-momentum-index', abi:'aia.org/resources/research', aia_fcst:'aia.org/resources/research', nahb:'nahb.org/news-and-economics', johnburns:'jbrec.com'};
+    const sources = {dodge:'construction.com/dodge-momentum-index', aia_fcst:'aia.org/resource-center/consensus-construction-forecast', johnburns:'jbrec.com'};
     document.getElementById('overrideTableBody').innerHTML = manuals.map(item=>`
       <tr>
         <td style="font-weight:600">${item.name}</td>
@@ -314,7 +315,6 @@ function buildEventMap(startDate, endDate) {
     }
     const fixed = RELEASE_DATES[item.id];
     if (fixed) { fixed.forEach(dt => add(dt, item)); return; }
-    // Rules-based: generate for each month in range
     const seen = new Set();
     let d = new Date(startDate);
     while (d<=endDate) {
@@ -376,7 +376,6 @@ function render() {
   }
   document.getElementById('monthLabel').textContent = labelText;
 
-  // Wider fetch window for rules-based generation
   const fetchStart = new Date(startDate); fetchStart.setDate(fetchStart.getDate()-35);
   const fetchEnd = new Date(endDate); fetchEnd.setDate(fetchEnd.getDate()+35);
   const eventMap = buildEventMap(fetchStart, fetchEnd);
@@ -426,7 +425,6 @@ function render() {
     view.innerHTML=`<div class="month-grid">${dowHeaders}${cells}</div>`;
 
   } else {
-    // List — 10 weeks ahead
     const listStart=new Date(today);
     const listEnd=new Date(today); listEnd.setDate(today.getDate()+70);
     const listFetchStart=new Date(listStart); listFetchStart.setDate(listStart.getDate()-5);
